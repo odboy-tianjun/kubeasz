@@ -52,11 +52,13 @@ localpathProvisionerVer=v0.0.31
 # https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner
 nfsProvisionerVer=v4.0.2
 #https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
-promChartVer=45.23.0
+promChartVer=75.7.0
 #https://github.com/bitnami/charts/tree/main/bitnami/kubeapps
 kubeappsVer=12.4.3
-#https://kubeblocks.io/docs/release-0.9/user_docs/overview/introduction
-kubeblocksVer=0.9.3
+#https://kubeblocks.io/docs/release-1_0/user_docs/overview/introduction
+kubeblocksVer=1.0.0
+#https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-operator-helm.html
+minioOperatorVer=7.1.1
 
 function usage() {
   echo -e "\033[33mUsage:\033[0m ezdown [options] [args]"
@@ -116,10 +118,10 @@ available options:
     kb-addon-mysql           to download images of kb-addon-mysql
     kb-addon-pg              to download images of kb-addon-postgresql
     kb-addon-redis           to download images of kb-addon-redis
-    kb-addon-minio           to download images of kb-addon-minio
     kb-addon-es              to download images of kb-addon-es
     kb-addon-mongodb         to download images of kb-addon-mongodb
     local-path-provisioner   to download images of local-path-provisioner
+    minio                    to download images of minio
     network-check            to download images of network-check
     nfs-provisioner          to download images of nfs-provisioner
     prometheus               to download images of prometheus
@@ -417,12 +419,12 @@ function get_extra_images() {
 
     kubeblocks)
       IMAGES=(\
-          "apecloud-registry.cn-zhangjiakou.cr.aliyuncs.com/apecloud/snapshot-controller:v6.2.1" \
-          "apecloud-registry.cn-zhangjiakou.cr.aliyuncs.com/apecloud/kubeblocks-charts:0.9.3" \
-          "apecloud-registry.cn-zhangjiakou.cr.aliyuncs.com/apecloud/kubeblocks-datascript:0.9.3" \
-          "apecloud-registry.cn-zhangjiakou.cr.aliyuncs.com/apecloud/kubeblocks:0.9.3" \
-          "apecloud-registry.cn-zhangjiakou.cr.aliyuncs.com/apecloud/kubeblocks-tools:0.9.3" \
-          "apecloud-registry.cn-zhangjiakou.cr.aliyuncs.com/apecloud/kubeblocks-dataprotection:0.9.3" \
+          "swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/sig-storage/snapshot-controller:v8.3.0" \
+          "apecloud-registry.cn-zhangjiakou.cr.aliyuncs.com/apecloud/kubeblocks-charts:${kubeblocksVer}" \
+          "apecloud-registry.cn-zhangjiakou.cr.aliyuncs.com/apecloud/kubeblocks:${kubeblocksVer}" \
+          "apecloud-registry.cn-zhangjiakou.cr.aliyuncs.com/apecloud/kubeblocks-tools:${kubeblocksVer}" \
+          "apecloud-registry.cn-zhangjiakou.cr.aliyuncs.com/apecloud/kubeblocks-dataprotection:${kubeblocksVer}" \
+          "apecloud-registry.cn-zhangjiakou.cr.aliyuncs.com/apecloud/datasafed:0.2.0" \
         )
       down_and_save_images apecloud
       ;;
@@ -433,8 +435,11 @@ function get_extra_images() {
           "apecloud/xtrabackup:8.0" \
           "apecloud/jemalloc:5.3.0" \
           "apecloud/syncer:0.5.0" \
-          "apecloud/mysql:8.0.35" \
-          "apecloud/agamotto:0.1.2-beta.1" \
+          "apecloud/mysql:8.0.39" \
+          "apecloud/mysqld-exporter:0.15.1" \
+          "apecloud/proxysql:2.4.4" \
+          "apecloud/percona-xtrabackup:8.0" \
+          "apecloud/wal-g-mysql:2.0.1-1-ubuntu" \
         )
       down_and_save_images apecloud
       ;;
@@ -442,6 +447,7 @@ function get_extra_images() {
     kb-addon-pg)
       IMAGES=(\
           "apecloud/spilo:16.4.0" \
+          "apecloud/dbctl:0.1.7" \
           "apecloud/pgbouncer:1.19.0" \
           "apecloud/postgres-exporter:v0.15.0" \
         )
@@ -450,15 +456,9 @@ function get_extra_images() {
 
     kb-addon-redis)
       IMAGES=(\
+          "apecloud/dbctl:0.1.7" \
+          "apecloud/agamotto:0.1.2-beta.1" \
           "apecloud/redis-stack-server:7.2.0-v14" \
-        )
-      down_and_save_images apecloud
-      ;;
-
-    kb-addon-minio)
-      IMAGES=(\
-          "apecloud/minio:RELEASE.2024-06-29T01-20-47Z" \
-          "apecloud/kubeblocks-tools:0.8.2" \
         )
       down_and_save_images apecloud
       ;;
@@ -503,6 +503,15 @@ function get_extra_images() {
       down_and_save_images rancher
       ;;
 
+    minio)
+      IMAGES=(\
+          "quay.io/minio/operator:v${minioOperatorVer}" \
+          "quay.io/minio/operator-sidecar:v7.0.1" \
+          "quay.io/minio/minio:RELEASE.2025-04-08T15-41-24Z" \
+        )
+      down_and_save_images minio
+      ;;
+
     network-check)
       IMAGES=(\
           "easzlab/json-mock:v1.3.0" \
@@ -520,15 +529,15 @@ function get_extra_images() {
 
     prometheus)
       IMAGES=(\
-          "easzlab/kube-state-metrics:v2.8.2" \
-          "easzlab/kube-webhook-certgen:v1.5.1" \
-          "grafana/grafana:9.4.7" \
-          "quay.io/kiwigrid/k8s-sidecar:1.22.0" \
-          "quay.io/prometheus-operator/prometheus-config-reloader:v0.63.0" \
-          "quay.io/prometheus-operator/prometheus-operator:v0.63.0" \
-          "quay.io/prometheus/alertmanager:v0.25.0" \
-          "quay.io/prometheus/node-exporter:v1.5.0" \
-          "quay.io/prometheus/prometheus:v2.42.0" \
+          "easzlab/kube-state-metrics:v2.16.0" \
+          "easzlab/kube-webhook-certgen:v1.6.0" \
+          "grafana/grafana:12.0.2" \
+          "quay.io/kiwigrid/k8s-sidecar:1.30.5" \
+          "quay.io/prometheus-operator/prometheus-config-reloader:v0.83.0" \
+          "quay.io/prometheus-operator/prometheus-operator:v0.83.0" \
+          "quay.io/prometheus/alertmanager:v0.28.1" \
+          "quay.io/prometheus/node-exporter:v1.9.1" \
+          "quay.io/prometheus/prometheus:v3.4.2" \
         )
       down_and_save_images prometheus
       ;;
